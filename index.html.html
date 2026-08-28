@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DoSphere — Personal Task Manager</title>
+<style>
+:root{
+ --bg:#f4f6fb;--card:#fff;--text:#172033;--muted:#778195;--line:#e6e9f0;
+ --primary:#635bff;--primary-dark:#5148df;--success:#16a673;--danger:#e34b55;
+ --shadow:0 12px 35px rgba(28,37,60,.08);--radius:18px
+}
+[data-theme=dark]{--bg:#10131a;--card:#191d26;--text:#f4f6fb;--muted:#9ca5b5;--line:#2b303b;--shadow:0 15px 40px rgba(0,0,0,.3)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.layout{min-height:100vh;display:flex}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:245px;background:var(--card);border-right:1px solid var(--line);padding:25px 17px;z-index:5}
+.brand{font-size:25px;font-weight:900;padding:8px 13px 28px}.brand span{color:var(--primary)}
+.nav-label{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:1px;margin:20px 13px 8px;text-transform:uppercase}
+.nav button{width:100%;background:transparent;border:0;color:var(--muted);padding:12px 13px;border-radius:11px;text-align:left;margin:2px 0}
+.nav button:hover,.nav button.active{background:#efeeff;color:var(--primary);font-weight:800}
+[data-theme=dark] .nav button:hover,[data-theme=dark] .nav button.active{background:#282641}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px 35px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:23px}
+.header h1{margin:0;font-size:29px}.header p{margin:5px 0;color:var(--muted)}
+.actions{display:flex;gap:9px}.icon{width:43px;height:43px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text)}
+.primary{background:var(--primary);color:white;padding:12px 17px;border-radius:11px;border:0;font-weight:800}.primary:hover{background:var(--primary-dark)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:19px;box-shadow:var(--shadow)}
+.stat-label{color:var(--muted);font-size:12px;font-weight:700}.stat-value{font-size:29px;font-weight:900;margin-top:6px}
+.bar{height:7px;background:var(--line);border-radius:20px;margin-top:11px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--primary);transition:.3s}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.toolbar{display:flex;gap:10px;margin-bottom:15px}.search{flex:1}
+.search input,.toolbar select{width:100%;height:43px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:0 12px;outline:none}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:17px}.tabs button{border:0;background:var(--bg);color:var(--muted);padding:9px 12px;border-radius:9px;font-weight:700}.tabs button.active{background:var(--primary);color:white}
+.tasks{display:grid;gap:10px}.task{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:15px;border:1px solid var(--line);border-radius:13px}
+.task:hover{border-color:#c8c5ff}.check{width:19px;height:19px;accent-color:var(--primary)}
+.task-title{font-weight:800}.task.done .task-title{text-decoration:line-through;color:var(--muted)}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;color:var(--muted);font-size:12px}.badge{padding:4px 8px;border-radius:20px;font-weight:800}.high{background:#ffe7e9;color:#c92f39}.medium{background:#fff2d5;color:#9a6500}.low{background:#e4f8ee;color:#08754a}
+.tag{background:var(--bg)}.overdue{color:var(--danger);font-weight:900}
+.task-actions{display:flex;gap:4px}.task-actions button{border:0;background:transparent;color:var(--muted);padding:7px;border-radius:8px}.task-actions button:hover{background:var(--bg);color:var(--text)}
+.empty{text-align:center;padding:45px 10px;color:var(--muted)}
+.side-head{display:flex;justify-content:space-between;align-items:center}.side-head h3{margin:0}.category{display:flex;justify-content:space-between;padding:12px 2px;border-bottom:1px solid var(--line)}.category span:before{content:"";display:inline-block;width:9px;height:9px;background:var(--primary);border-radius:50%;margin-right:8px}
+.quote{margin-top:20px;background:var(--bg);padding:15px;border-radius:13px;color:var(--muted);font-size:13px;line-height:1.5}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.52);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal-bg.show{display:flex}
+.modal{width:100%;max-width:560px;background:var(--card);border-radius:18px;padding:24px;box-shadow:0 25px 70px rgba(0,0,0,.25)}.modal h2{margin:0 0 17px}
+.form{display:grid;gap:13px}.form label{font-size:12px;font-weight:800}.form input,.form textarea,.form select{display:block;width:100%;margin-top:6px;padding:11px 12px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;outline:none}.form textarea{min-height:80px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.cancel{border:0;background:var(--bg);color:var(--text);padding:11px 16px;border-radius:10px}
+.toast{position:fixed;right:25px;bottom:25px;background:var(--text);color:var(--card);padding:13px 17px;border-radius:11px;display:none;z-index:30}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.sidebar{display:none}.main{margin:0;width:100%;padding:18px}.header h1{font-size:23px}.header .primary{display:none}.stats{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}.task{grid-template-columns:auto 1fr}.task-actions{grid-column:2}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">Do<span>Sphere</span> ◉</div>
+  <div class="nav">
+    <button class="active" data-view="all">🏠 Dashboard</button>
+    <button data-view="today">📅 Today</button>
+    <button data-view="upcoming">🗓️ Upcoming</button>
+    <button data-view="important">⭐ Important</button>
+    <button data-view="completed">✅ Completed</button>
+    <div class="nav-label">Manage</div>
+    <button data-view="all">📋 All Tasks</button>
+  </div>
+</aside>
+
+<main class="main">
+<header class="header">
+  <div><h1 id="title">Welcome to DoSphere 👋</h1><p id="subtitle">Plan your work. Prioritize your goals. Get things done.</p></div>
+  <div class="actions"><button class="icon" onclick="theme()" title="Dark mode">🌙</button><button class="primary" onclick="openModal()">＋ New Task</button></div>
+</header>
+
+<section class="stats">
+ <div class="stat"><div class="stat-label">TOTAL TASKS</div><div class="stat-value" id="total">0</div></div>
+ <div class="stat"><div class="stat-label">COMPLETED</div><div class="stat-value" id="completed">0</div></div>
+ <div class="stat"><div class="stat-label">PENDING</div><div class="stat-value" id="pending">0</div></div>
+ <div class="stat"><div class="stat-label">COMPLETION RATE</div><div class="stat-value" id="rate">0%</div><div class="bar"><i id="bar"></i></div></div>
+</section>
+
+<div class="grid">
+<section class="panel">
+ <div class="toolbar"><div class="search"><input id="search" placeholder="🔎 Search tasks..." oninput="render()"></div><select id="sort" onchange="render()"><option value="new">Newest first</option><option value="priority">Priority</option><option value="date">Due date</option></select></div>
+ <div class="tabs"><button class="active" data-filter="all">All</button><button data-filter="pending">Pending</button><button data-filter="completed">Completed</button><button data-filter="high">High Priority</button></div>
+ <div class="tasks" id="tasks"></div><div class="empty" id="empty">No tasks found.</div>
+</section>
+
+<aside class="panel">
+ <div class="side-head"><h3>Categories</h3>📊</div>
+ <div id="categories"></div>
+ <div class="quote"><b>DoSphere tip 💡</b><br><br>Focus on your highest-priority task first. Small progress every day creates big results.</div>
+</aside>
+</div>
+</main>
+</div>
+
+<div class="modal-bg" id="modal">
+<div class="modal">
+ <h2 id="modalTitle">Create New Task</h2>
+ <div class="form">
+  <label>Task title<input id="fTitle" maxlength="100" placeholder="e.g. Complete project presentation"></label>
+  <label>Description<textarea id="fDesc" placeholder="Add task details..."></textarea></label>
+  <div class="row"><label>Due date<input type="date" id="fDate"></label><label>Priority<select id="fPriority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label></div>
+  <div class="row"><label>Category<select id="fCategory"><option>Study</option><option>Project</option><option>Work</option><option>Personal</option><option>Health</option><option>Other</option></select></label><label>Tag<input id="fTag" placeholder="e.g. college"></label></div>
+ </div>
+ <div class="modal-actions"><button class="cancel" onclick="closeModal()">Cancel</button><button class="primary" onclick="saveTask()">Save Task</button></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="dosphere_tasks_v1";
+let tasks=JSON.parse(localStorage.getItem(KEY)||"[]"),view="all",filter="all",editId=null;
+const now=new Date();now.setHours(0,0,0,0);
+function datePlus(n){let d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+if(!tasks.length){
+ tasks=[
+ {id:101,title:"Complete project presentation",desc:"Prepare slides and practice the final presentation.",due:datePlus(1),priority:"high",category:"Project",tag:"college",done:false,created:Date.now()-4000},
+ {id:102,title:"Study Computer Networks",desc:"Revise routing and transport layer concepts.",due:datePlus(2),priority:"medium",category:"Study",tag:"exam",done:false,created:Date.now()-3000},
+ {id:103,title:"Practice Java",desc:"Solve five programming problems.",due:datePlus(0),priority:"low",category:"Study",tag:"java",done:true,created:Date.now()-2000}
+ ];save()
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(tasks))}
+function esc(x){return String(x||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function overdue(t){return t.due&&!t.done&&new Date(t.due+"T00:00:00")<now}
+function fmt(d){if(!d)return"No due date";return new Date(d+"T00:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
+function toast(s){let x=document.getElementById("toast");x.textContent=s;x.style.display="block";setTimeout(()=>x.style.display="none",1700)}
+function openModal(id=null){
+ editId=id;let t=id?tasks.find(x=>x.id===id):null;
+ document.getElementById("modalTitle").textContent=t?"Edit Task":"Create New Task";
+ document.getElementById("fTitle").value=t?.title||"";document.getElementById("fDesc").value=t?.desc||"";
+ document.getElementById("fDate").value=t?.due||datePlus(1);document.getElementById("fPriority").value=t?.priority||"medium";
+ document.getElementById("fCategory").value=t?.category||"Study";document.getElementById("fTag").value=t?.tag||"";
+ document.getElementById("modal").classList.add("show");document.getElementById("fTitle").focus()
+}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+function saveTask(){
+ let title=document.getElementById("fTitle").value.trim();if(!title){toast("Task title is required");return}
+ let data={title,desc:document.getElementById("fDesc").value.trim(),due:document.getElementById("fDate").value,priority:document.getElementById("fPriority").value,category:document.getElementById("fCategory").value,tag:document.getElementById("fTag").value.trim()};
+ if(editId){Object.assign(tasks.find(t=>t.id===editId),data);toast("Task updated ✓")}
+ else{tasks.unshift({id:Date.now(),...data,done:false,created:Date.now()});toast("Task added ✓")}
+ save();closeModal();render()
+}
+function toggle(id){let t=tasks.find(x=>x.id===id);t.done=!t.done;save();render();toast(t.done?"Completed ✓":"Task reopened")}
+function removeTask(id){tasks=tasks.filter(t=>t.id!==id);save();render();toast("Task deleted")}
+function getList(){
+ let q=document.getElementById("search").value.toLowerCase();
+ return tasks.filter(t=>{
+  let v=view==="all"||view==="today"&&t.due===datePlus(0)||view==="upcoming"&&t.due>datePlus(0)||view==="important"&&t.priority==="high"&&!t.done||view==="completed"&&t.done;
+  let f=filter==="all"||filter==="pending"&&!t.done||filter==="completed"&&t.done||filter==="high"&&t.priority==="high";
+  return v&&f&&(t.title+" "+t.desc+" "+t.category+" "+t.tag).toLowerCase().includes(q)
+ })
+}
+function render(){
+ let done=tasks.filter(t=>t.done).length,p=tasks.length?Math.round(done/tasks.length*100):0;
+ document.getElementById("total").textContent=tasks.length;document.getElementById("completed").textContent=done;document.getElementById("pending").textContent=tasks.length-done;document.getElementById("rate").textContent=p+"%";document.getElementById("bar").style.width=p+"%";
+ let list=getList(),s=document.getElementById("sort").value;
+ list.sort((a,b)=>s==="priority"?({high:0,medium:1,low:2}[a.priority]-{high:0,medium:1,low:2}[b.priority]):s==="date"?(a.due||"9999").localeCompare(b.due||"9999"):b.created-a.created);
+ let box=document.getElementById("tasks");box.innerHTML="";
+ list.forEach(t=>{
+  let el=document.createElement("div");el.className="task "+(t.done?"done":"");
+  el.innerHTML=`<input class="check" type="checkbox" ${t.done?"checked":""} onchange="toggle(${t.id})">
+  <div><div class="task-title">${esc(t.title)}</div><div class="meta"><span class="badge ${t.priority}">${t.priority.toUpperCase()}</span><span>📅 <b class="${overdue(t)?"overdue":""}">${overdue(t)?"Overdue · ":""}${fmt(t.due)}</b></span><span>📁 ${esc(t.category)}</span>${t.tag?`<span class="badge tag">#${esc(t.tag)}</span>`:""}</div></div>
+  <div class="task-actions"><button title="Edit" onclick="openModal(${t.id})">✏️</button><button title="Delete" onclick="removeTask(${t.id})">🗑️</button></div>`;
+  box.appendChild(el)
+ });
+ document.getElementById("empty").style.display=list.length?"none":"block";categories()
+}
+function categories(){
+ let c={};tasks.forEach(t=>c[t.category]=(c[t.category]||0)+1);
+ document.getElementById("categories").innerHTML=Object.entries(c).map(([k,v])=>`<div class="category"><span>${esc(k)}</span><b>${v}</b></div>`).join("")
+}
+function theme(){let d=document.documentElement.getAttribute("data-theme")==="dark";document.documentElement.setAttribute("data-theme",d?"light":"dark");localStorage.setItem("dosphere_theme",d?"light":"dark")}
+if(localStorage.getItem("dosphere_theme")==="dark")document.documentElement.setAttribute("data-theme","dark");
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");filter=b.dataset.filter;render()});
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");view=b.dataset.view;let names={all:["Welcome to DoSphere 👋","Plan your work. Prioritize your goals. Get things done."],today:["Today's Tasks","Everything you need to focus on today."],upcoming:["Upcoming Tasks","Stay ahead of your deadlines."],important:["Important Tasks","Your highest-priority work in one place."],completed:["Completed Tasks","Look how much you have accomplished!"]};document.getElementById("title").textContent=names[view]?.[0]||"All Tasks";document.getElementById("subtitle").textContent=names[view]?.[1]||"Manage all your tasks.";render()});
+document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")closeModal()};document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});render();
+</script>
+</body>
+</html>
